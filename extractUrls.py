@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 import argparse
 import urllib.request
+from urllib.parse import unquote
 import os
 
 parser = argparse.ArgumentParser(description='Extract link urls of a website.')
@@ -46,7 +47,9 @@ def downloadFile(url):
     if not os.path.exists(directory):
         os.makedirs(directory)
     image_name = directory + "/" + url.rsplit('/', 1)[-1]
+    image_name = unquote(image_name)
     urllib.request.urlretrieve(url, image_name)
+    print(" -> Save file " + image_name)
 
 urls = list()
 while True:
