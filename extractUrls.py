@@ -5,15 +5,11 @@ from bs4 import BeautifulSoup
 import argparse
 
 parser = argparse.ArgumentParser(description='Extract link urls of a website.')
-parser.add_argument('--url', help='url of website to parse')
+parser.add_argument('url', help='url of website to parse')
 parser.add_argument('--distinct', action='store_true', help='result list should not contain duplicate link urls, do not preserve order')
 args = parser.parse_args()
 
-if args.url is not None:
-    url = args.url
-else:
-    url = "http://www.python.org"
-
+url = args.url
 distinct = args.distinct
 
 response = requests.get(url)
