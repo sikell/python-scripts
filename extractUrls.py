@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-import requests
 from bs4 import BeautifulSoup
 import argparse
-import urllib.request
+from urllib.request import urlretrieve, urlopen
 from urllib.parse import unquote
 import os
 
@@ -19,9 +18,14 @@ distinct = args.distinct
 download_files = args.download
 directory = "downloads"
 
-response = requests.get(url)
-# parse html
-page = str(BeautifulSoup(response.content, "html.parser"))
+try:
+    response = urlopen(url)
+except:
+    print("Could not access URL " + url)
+    exit(1)
+
+page = str(BeautifulSoup(response.read().decode("utf8"), "html.parser"))
+response.close()
 
 def getURL(page):
     """Extract next url from page.
@@ -48,7 +52,7 @@ def downloadFile(url):
         os.makedirs(directory)
     image_name = directory + "/" + url.rsplit('/', 1)[-1]
     image_name = unquote(image_name)
-    urllib.request.urlretrieve(url, image_name)
+    urlretrieve(url, image_name)
     print(" -> Save file " + image_name)
 
 urls = list()
