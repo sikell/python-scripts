@@ -8,7 +8,8 @@ import os
 
 parser = argparse.ArgumentParser(description='Extract link urls of a website.')
 parser.add_argument('url', help='url of website to parse')
-parser.add_argument('--distinct', action='store_true', help='result list should not contain duplicate link urls, do not preserve order')
+parser.add_argument('--distinct', action='store_true', help='result list should not contain duplicate link urls, '
+                                                            'do not preserve order')
 parser.add_argument('--filter-should-contain', help='only parse urls containing given string')
 parser.add_argument('--download', action='store_true', help='save all found urls to files')
 parser.add_argument('--save', action='store_true', help='write found files into a .txt file')
@@ -17,7 +18,7 @@ args = parser.parse_args()
 url = args.url
 distinct = args.distinct
 download_files = args.download
-write_to_file = args.save
+save_to_file = args.save
 directory = "result"
 
 try:
@@ -28,6 +29,7 @@ except:
 
 page = str(BeautifulSoup(response.read().decode("utf8"), "html.parser"))
 response.close()
+
 
 def getURL(page):
     """Extract next url from page.
@@ -42,14 +44,16 @@ def getURL(page):
     url = page[start_quote + 1: end_quote]
     return url, end_quote
 
-def filter(url):
+
+def filter_url(url):
     """Returns True if all configured filters are passed and False if not."""
     if args.filter_should_contain is not None and args.filter_should_contain not in url:
         return False
     return True
 
-def writeToFile(urls):
-    makeDir(directory)
+
+def write_to_file(urls):
+    make_dir(directory)
     filename = directory + "/urls.txt"
     f = open(filename, "w+")
     for url in urls:
@@ -57,16 +61,19 @@ def writeToFile(urls):
     print(" -> URLs are written to file " + filename)
     f.close()
 
-def downloadFile(url):
+
+def download_file(url):
     """Download a file from given url an use last url segment as filename to directory 'download/'."""
-    makeDir(directory)
+    make_dir(directory)
     image_name = directory + "/" + unquote(url.rsplit('/', 1)[-1])
     urlretrieve(url, image_name)
     print(" -> Save file " + image_name)
 
-def makeDir(dir):
+
+def make_dir(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
+
 
 urls = list()
 while True:
@@ -74,8 +81,10 @@ while True:
     page = page[n:]
     if not url:
         break
-    if filter(url):
+    if filter_url(url):
         urls.append(url)
+
+print(str(len(urls)) + " URLs found!")
 
 if distinct:
     urls = set(urls)
@@ -83,7 +92,7 @@ if distinct:
 for url in urls:
     print(url)
     if download_files:
-        downloadFile(url)
+        download_file(url)
 
-if write_to_file:
-    writeToFile(urls)
+if save_to_file:
+    write_to_file(urls)
