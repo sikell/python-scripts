@@ -11,12 +11,14 @@ parser.add_argument('url', help='url of website to parse')
 parser.add_argument('--distinct', action='store_true', help='result list should not contain duplicate link urls, do not preserve order')
 parser.add_argument('--filter-should-contain', help='only parse urls containing given string')
 parser.add_argument('--download', action='store_true', help='save all found urls to files')
+parser.add_argument('--save', action='store_true', help='write found files into a .txt file')
 args = parser.parse_args()
 
 url = args.url
 distinct = args.distinct
 download_files = args.download
-directory = "downloads"
+write_to_file = args.save
+directory = "result"
 
 try:
     response = urlopen(url)
@@ -46,6 +48,16 @@ def filter(url):
         return False
     return True
 
+def writeToFile(urls):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    filename = directory + "/urls.txt"
+    f = open(filename, "x")
+    for url in urls:
+        f.write(url + "\n")
+    print(" -> URLs are written to file " + filename)
+    f.close()
+
 def downloadFile(url):
     """Download a file from given url an use last url segment as filename to directory 'download/'."""
     if not os.path.exists(directory):
@@ -71,3 +83,6 @@ for url in urls:
     print(url)
     if download_files:
         downloadFile(url)
+
+if write_to_file:
+    writeToFile(urls)
