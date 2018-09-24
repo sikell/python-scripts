@@ -49,10 +49,9 @@ def filter(url):
     return True
 
 def writeToFile(urls):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    makeDir(directory)
     filename = directory + "/urls.txt"
-    f = open(filename, "x")
+    f = open(filename, "w+")
     for url in urls:
         f.write(url + "\n")
     print(" -> URLs are written to file " + filename)
@@ -60,12 +59,14 @@ def writeToFile(urls):
 
 def downloadFile(url):
     """Download a file from given url an use last url segment as filename to directory 'download/'."""
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    image_name = directory + "/" + url.rsplit('/', 1)[-1]
-    image_name = unquote(image_name)
+    makeDir(directory)
+    image_name = directory + "/" + unquote(url.rsplit('/', 1)[-1])
     urlretrieve(url, image_name)
     print(" -> Save file " + image_name)
+
+def makeDir(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
 
 urls = list()
 while True:
