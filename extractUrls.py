@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 from bs4 import BeautifulSoup
-import argparse
+from argparse import ArgumentParser
 from urllib.request import urlretrieve, urlopen
 from urllib.parse import unquote
-import os
+from os import path, makedirs
 
-parser = argparse.ArgumentParser(description='Extract link urls of a website.')
+parser = ArgumentParser(description='Extract link urls of a website.')
 parser.add_argument('url', help='url of website to parse')
 parser.add_argument('--distinct', action='store_true', help='result list should not contain duplicate link urls, '
                                                             'do not preserve order')
@@ -71,8 +71,8 @@ def download_file(url):
 
 
 def make_dir(dir):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    if not path.exists(dir):
+        makedirs(dir)
 
 
 urls = list()
