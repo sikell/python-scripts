@@ -1,28 +1,20 @@
 #!/usr/bin/env python
 
+from re import match
 from bs4 import BeautifulSoup
 from argparse import ArgumentParser
 from urllib.request import urlretrieve, urlopen
-from urllib.parse import unquote
+from urllib.parse import unquote, urljoin, urlparse
 from os import path, makedirs
 
 parser = ArgumentParser(description='Extract link urls of a website.')
-parser.add_argument('url', help='url of website to parse')
+parser.add_argument('host', help='host of website to parse (with http/https)')
 parser.add_argument('--save', action='store_true', help='write found files into a .txt file')
 args = parser.parse_args()
 
-url = args.url
+host = args.host
 save_to_file = args.save
 directory = "result"
-
-try:
-    response = urlopen(url)
-except:
-    print("Could not access URL " + url)
-    exit(1)
-
-page = str(BeautifulSoup(response.read().decode("utf8"), "html.parser"))
-response.close()
 
 
 def getURL(page):
@@ -39,13 +31,6 @@ def getURL(page):
     return url, end_quote
 
 
-def filter_url(url):
-    """Returns True if all configured filters are passed and False if not."""
-    if args.filter_should_contain is not None and args.filter_should_contain not in url:
-        return False
-    return True
-
-
 def write_to_file(urls):
     make_dir(directory)
     filename = directory + "/urls.txt"
@@ -56,37 +41,59 @@ def write_to_file(urls):
     f.close()
 
 
-def download_file(url):
-    """Download a file from given url an use last url segment as filename to directory 'download/'."""
-    make_dir(directory)
-    image_name = directory + "/" + unquote(url.rsplit('/', 1)[-1])
-    urlretrieve(url, image_name)
-    print(" -> Save file " + image_name)
-
-
 def make_dir(dir):
     if not path.exists(dir):
         makedirs(dir)
 
 
-urls = list()
-while True:
-    url, n = getURL(page)
-    page = page[n:]
-    if not url:
-        break
-    if filter_url(url):
+def find_urls_in_page(page):
+    urls = list()
+    if page is None:
+        return urls
+    while True:
+        url, n = getURL(page)
+        page = page[n:]
+        if not url:
+            break
         urls.append(url)
+    return urls
 
-print(str(len(urls)) + " URLs found!")
 
-if distinct:
-    urls = set(urls)
+def open_url(url):
+    try:
+        response = urlopen(url)
+    except:
+        print("Could not access URL " + url)
+        return None
+    http_message = response.info()
+    if http_message.get_content_type() != "text/html":
+        print("Wrong content type: " + http_message.get_content_type())
+        return None
+    try:
+        decoded_page = response.read().decode("utf8")
+    except UnicodeDecodeError:
+        print("Error: can't decode unicode byte!")
+        decoded_page = response.read()
+    page = str(BeautifulSoup(decoded_page, "html.parser"))
+    response.close()
+    return page
 
-for url in urls:
-    print(url)
-    if download_files:
-        download_file(url)
+
+def process_url(start_url, processed_urls):
+    print("-> " + start_url)
+    processed_urls.add(start_url)
+    for url in find_urls_in_page(open_url(start_url)):
+        hostname = urlparse(url).netloc
+        if hostname is "" or hostname == host:
+            constructed_url = urljoin(start_url, url)
+            if constructed_url not in processed_urls:
+                process_url(constructed_url, processed_urls)
+        else:
+            print("Other host: " + url)
+
+
+urls = set()
+process_url(host + "/", urls)
 
 if save_to_file:
     write_to_file(urls)
