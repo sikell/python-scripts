@@ -9,7 +9,8 @@ from os import path, makedirs
 
 parser = ArgumentParser(description='Extract link urls of a website.')
 parser.add_argument('host', help='host of website to parse (with http/https)')
-parser.add_argument('--save', action='store_true', help='write found files into a .txt file')
+parser.add_argument('--save', action='store_true',
+                    help='write found files into a .txt file')
 args = parser.parse_args()
 
 host = args.host
@@ -31,9 +32,9 @@ def getURL(page):
     return url, end_quote
 
 
-def write_to_file(urls):
+def write_to_file(urls, name):
     make_dir(directory)
-    filename = directory + "/urls.txt"
+    filename = directory + "/" + name + ".txt"
     f = open(filename, "w+")
     for url in urls:
         f.write(url + "\n")
@@ -48,8 +49,6 @@ def make_dir(dir):
 
 def find_urls_in_page(page):
     urls = list()
-    if page is None:
-        return urls
     while True:
         url, n = getURL(page)
         page = page[n:]
@@ -68,7 +67,7 @@ def open_url(url):
     http_message = response.info()
     if http_message.get_content_type() != "text/html":
         print("Wrong content type: " + http_message.get_content_type())
-        return None
+        return False
     try:
         decoded_page = response.read().decode("utf8")
     except UnicodeDecodeError:
@@ -79,21 +78,32 @@ def open_url(url):
     return page
 
 
-def process_url(start_url, processed_urls):
+def process_url(start_url, processed_urls, error_urls):
     print("-> " + start_url)
+    page = open_url(start_url)
+    if page is None:
+        # error while request
+        error_urls.add(start_url)
+        return
     processed_urls.add(start_url)
-    for url in find_urls_in_page(open_url(start_url)):
+    if page is False: 
+        # of wrong content type
+        return
+    for url in find_urls_in_page(page):
         hostname = urlparse(url).netloc
         if hostname is "" or hostname == host:
             constructed_url = urljoin(start_url, url)
             if constructed_url not in processed_urls:
-                process_url(constructed_url, processed_urls)
+                process_url(constructed_url, processed_urls, error_urls)
         else:
             print("Other host: " + url)
+            error_urls.add(url)
 
 
 urls = set()
-process_url(host + "/", urls)
+error_urls = set()
+process_url(host + "/", urls, error_urls)
 
 if save_to_file:
-    write_to_file(urls)
+    write_to_file(urls, "urls")
+    write_to_file(error_urls, "errors")
