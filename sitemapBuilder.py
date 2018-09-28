@@ -3,7 +3,7 @@
 from re import match
 from bs4 import BeautifulSoup
 from argparse import ArgumentParser
-from urllib.request import urlretrieve, urlopen
+from urllib.request import urlretrieve, urlopen, Request
 from urllib.parse import unquote, urljoin, urlparse
 from os import path, makedirs
 
@@ -59,15 +59,26 @@ def find_urls_in_page(page):
 
 
 def open_url(url):
+    # first make HEAD request to avoid downloading 
+    # large content of wrong content type
     try:
-        response = urlopen(url)
+        request = Request(url)
+        request.get_method = lambda : 'HEAD'
+        response = urlopen(request)
     except:
-        print("Could not access URL " + url)
+        print("Could not access URL with HEAD " + url)
         return None
     http_message = response.info()
     if http_message.get_content_type() != "text/html":
         print("Wrong content type: " + http_message.get_content_type())
         return False
+
+    # then make normal GET if everything is fine
+    try:
+        response = urlopen(url)
+    except:
+        print("Could not open URL " + url)
+        return None
     try:
         decoded_page = response.read().decode("utf8")
     except UnicodeDecodeError:
