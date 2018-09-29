@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import threading
 from re import match
 from bs4 import BeautifulSoup
 from argparse import ArgumentParser
@@ -17,6 +18,14 @@ host = args.host
 save_to_file = args.save
 directory = "result"
 
+class FuncThread(threading.Thread):
+    def __init__(self, target, *args):
+        threading.Thread.__init__(self)
+        self._target = target
+        self._args = args
+ 
+    def run(self):
+        self._target(*self._args)
 
 def getURL(page):
     """Extract next url from page.
@@ -88,32 +97,48 @@ def open_url(url):
     response.close()
     return page
 
+threadLock = threading.Lock()
 
 def process_url(start_url, processed_urls, error_urls):
+    threadLock.acquire()
+    processed_urls.add(start_url)
+    threadLock.release()
     print("-> " + start_url)
     page = open_url(start_url)
     if page is None:
         # error while request
+        threadLock.acquire()
         error_urls.add(start_url)
+        processed_urls.remove(start_url)
+        threadLock.release()
         return
-    processed_urls.add(start_url)
     if page is False: 
         # of wrong content type
         return
+    subThreads = list()
     for url in find_urls_in_page(page):
         hostname = urlparse(url).netloc
         if hostname is "" or hostname == host:
             constructed_url = urljoin(start_url, url)
-            if constructed_url not in processed_urls:
-                process_url(constructed_url, processed_urls, error_urls)
+            threadLock.acquire()
+            alreadyProcessed = constructed_url not in processed_urls
+            threadLock.release()
+            if alreadyProcessed:
+                subThread = FuncThread(process_url, constructed_url, processed_urls, error_urls)
+                subThreads.append(subThread)
+                subThread.start()
         else:
             print("Other host: " + url)
             error_urls.add(url)
+    for t in subThreads:
+        t.join()
 
 
 urls = set()
 error_urls = set()
-process_url(host + "/", urls, error_urls)
+tMain = FuncThread(process_url, host + "/", urls, error_urls)
+tMain.start()
+tMain.join()
 
 if save_to_file:
     write_to_file(urls, "urls")
