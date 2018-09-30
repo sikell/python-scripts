@@ -27,7 +27,7 @@ class FuncThread(threading.Thread):
     def run(self):
         self._target(*self._args)
 
-def getURL(page):
+def get_url(page):
     """Extract next url from page.
     :param page: html of web page 
     :return: urls in that page 
@@ -59,7 +59,7 @@ def make_dir(dir):
 def find_urls_in_page(page):
     urls = list()
     while True:
-        url, n = getURL(page)
+        url, n = get_url(page)
         page = page[n:]
         if not url:
             break
@@ -97,40 +97,40 @@ def open_url(url):
     response.close()
     return page
 
-threadLock = threading.Lock()
+thread_lock = threading.Lock()
 
 def process_url(start_url, processed_urls, error_urls):
-    threadLock.acquire()
+    thread_lock.acquire()
     processed_urls.add(start_url)
-    threadLock.release()
+    thread_lock.release()
     print("-> " + start_url)
     page = open_url(start_url)
     if page is None:
         # error while request
-        threadLock.acquire()
+        thread_lock.acquire()
         error_urls.add(start_url)
         processed_urls.remove(start_url)
-        threadLock.release()
+        thread_lock.release()
         return
     if page is False: 
         # of wrong content type
         return
-    subThreads = list()
+    sub_threads = list()
     for url in find_urls_in_page(page):
         hostname = urlparse(url).netloc
         if hostname is "" or hostname == host:
             constructed_url = urljoin(start_url, url)
-            threadLock.acquire()
-            alreadyProcessed = constructed_url not in processed_urls
-            threadLock.release()
-            if alreadyProcessed:
+            thread_lock.acquire()
+            not_already_processed = constructed_url not in processed_urls
+            thread_lock.release()
+            if not_already_processed:
                 subThread = FuncThread(process_url, constructed_url, processed_urls, error_urls)
-                subThreads.append(subThread)
+                sub_threads.append(subThread)
                 subThread.start()
         else:
             print("Other host: " + url)
             error_urls.add(url)
-    for t in subThreads:
+    for t in sub_threads:
         t.join()
 
 
