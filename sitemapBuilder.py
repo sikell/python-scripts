@@ -96,7 +96,7 @@ def open_url(url):
         response = urlopen(url)
     except:
         print("Could not open URL " + url)
-        return None
+        return Error("Failed to access URL!")
     try:
         decoded_page = response.read().decode("utf8")
     except UnicodeDecodeError:
