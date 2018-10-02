@@ -73,6 +73,7 @@ def find_urls_in_page(page):
 
 
 def open_url(url):
+    print("-> " + url)
     # first make HEAD request to avoid downloading 
     # large content of wrong content type
     try:
@@ -88,7 +89,6 @@ def open_url(url):
         return Error("Unknown Exception")
     http_message = response.info()
     if http_message.get_content_type() != "text/html":
-        print("Wrong content type: " + http_message.get_content_type())
         return False
 
     # then make normal GET if everything is fine
@@ -107,7 +107,6 @@ def open_url(url):
     return page
 
 def process_url(start_url, processed_urls, error_urls, foreign_hosts, thread_lock):
-    print("-> " + start_url)
     thread_lock.acquire()
     if start_url in processed_urls:
         thread_lock.release()
