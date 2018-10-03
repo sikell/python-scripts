@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from file.FileWriter import write_to_file, make_dir
 from bs4 import BeautifulSoup
 from argparse import ArgumentParser
 from urllib.request import urlretrieve, urlopen
@@ -52,16 +53,6 @@ def filter_url(url):
     return True
 
 
-def write_to_file(urls):
-    make_dir(directory)
-    filename = directory + "/urls.txt"
-    f = open(filename, "w+")
-    for url in urls:
-        f.write(url + "\n")
-    print(" -> URLs are written to file " + filename)
-    f.close()
-
-
 def download_file(url):
     """Download a file from given url an use last url segment as filename to directory 'download/'."""
     make_dir(directory)
@@ -69,10 +60,6 @@ def download_file(url):
     urlretrieve(url, image_name)
     print(" -> Save file " + image_name)
 
-
-def make_dir(dir):
-    if not path.exists(dir):
-        makedirs(dir)
 
 
 urls = list()
