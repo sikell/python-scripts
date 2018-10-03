@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from file.FileWriter import write_to_file, make_dir
+from file.FileWriter import FileWriter
 from bs4 import BeautifulSoup
 from argparse import ArgumentParser
 from urllib.request import urlretrieve, urlopen
 from urllib.parse import unquote
-from os import path, makedirs
+import os
 
 parser = ArgumentParser(description='Extract link urls of a website.')
 parser.add_argument('url', help='url of website to parse')
@@ -55,7 +55,8 @@ def filter_url(url):
 
 def download_file(url):
     """Download a file from given url an use last url segment as filename to directory 'download/'."""
-    make_dir(directory)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     image_name = directory + "/" + unquote(url.rsplit('/', 1)[-1])
     urlretrieve(url, image_name)
     print(" -> Save file " + image_name)
@@ -82,4 +83,6 @@ for url in urls:
         download_file(url)
 
 if save_to_file:
-    write_to_file(urls)
+    writer = FileWriter("result", "urls.txt")
+    file_path = writer.write_list(urls)
+    print(" -> URLs written to file " + file_path)
