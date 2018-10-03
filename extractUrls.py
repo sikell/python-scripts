@@ -83,6 +83,5 @@ for url in urls:
         download_file(url)
 
 if save_to_file:
-    writer = FileWriter("result", "urls.txt")
-    file_path = writer.write_list(urls)
+    file_path = FileWriter("result", "urls.txt").write_list(urls)
     print(" -> URLs written to file " + file_path)

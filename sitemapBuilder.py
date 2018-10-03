@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from file.FileWriter import FileWriter
 import threading
 from re import match
 from bs4 import BeautifulSoup
@@ -7,7 +8,6 @@ from argparse import ArgumentParser
 from urllib.request import urlretrieve, urlopen, Request
 from urllib.parse import unquote, urljoin, urlparse
 from urllib.error import HTTPError, URLError
-from os import path, makedirs
 
 parser = ArgumentParser(description='Extract link urls of a website.')
 parser.add_argument('host', help='host of website to parse (with http/https)')
@@ -44,22 +44,6 @@ def get_url(page):
     end_quote = page.find('"', start_quote + 1)
     url = page[start_quote + 1: end_quote]
     return url, end_quote
-
-
-def write_to_file(urls, name):
-    make_dir(directory)
-    filename = directory + "/" + name + ".txt"
-    f = open(filename, "w+")
-    for url in urls:
-        f.write(url + "\n")
-    print(" -> URLs are written to file " + filename)
-    f.close()
-
-
-def make_dir(dir):
-    if not path.exists(dir):
-        makedirs(dir)
-
 
 def find_urls_in_page(page):
     urls = list()
@@ -150,6 +134,8 @@ tMain.start()
 tMain.join()
 
 if save_to_file:
-    write_to_file(processed_urls, "urls")
-    write_to_file(foreign_hosts, "foreign")
-    write_to_file(error_urls, "errors")
+    directory = "result"
+    FileWriter(directory, "urls.txt").write_list(processed_urls)
+    FileWriter(directory, "foreign.txt").write_list(foreign_hosts)
+    FileWriter(directory, "errors.txt").write_list(error_urls)
+    print(" -> results written to files in directory: " + directory + "/")
